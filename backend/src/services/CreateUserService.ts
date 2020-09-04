@@ -2,6 +2,7 @@ import { getRepository } from 'typeorm';
 import { hash } from 'bcryptjs';
 
 import User from '../models/User';
+import AppError from '../errors/AppError';
 
 interface Request {
   name: string;
@@ -18,7 +19,7 @@ class CreateUserService {
     });
 
     if (checkingUser) {
-      throw new Error(
+      throw new AppError(
         'Este e-mail foi vinculado a uma outra conta já existente.',
       );
     }
@@ -31,7 +32,7 @@ class CreateUserService {
       password: hashedPassword,
     });
 
-    // delete user.password;
+    delete user.password;
 
     await usersRepository.save(user);
 

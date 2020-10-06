@@ -1,22 +1,27 @@
 import { startOfHour } from 'date-fns';
-import { getCustomRepository } from 'typeorm';
+import { injectable, inject } from 'tsyringe';
 
 import AppError from '@shared/errors/AppError';
-import Appointment from '../infra/typeorm/entities/Appointment';
-import AppointmentsRepository from '../repositories/AppointmentsRepository';
 
-interface Request {
+import IAppointmentsRepository from '@modules/appointments/repositories/IAppointmentsRepository';
+import Appointment from '../infra/typeorm/entities/Appointment';
+
+interface IRequest {
   provider_id: string;
   date: Date;
 }
 
+@injectable()
 class CreateAppointmentService {
-  public async execute({ provider_id, date }: Request): Promise<Appointment> {
-    const appointmentsRepository = getCustomRepository(AppointmentsRepository);
+  constructor(
+    @inject('AppointmentsRepository')
+    private appointmentsRepository: IAppointmentsRepository,
+  ) {}
 
+  public async execute({ provider_id, date }: IRequest): Promise<Appointment> {
     const appointmentDate = startOfHour(date);
 
-    const findAppointmentOnSameDate = await appointmentsRepository.findByDate(
+    const findAppointmentOnSameDate = await this.appointmentsRepository.findByDate(
       appointmentDate,
     );
 
@@ -24,12 +29,10 @@ class CreateAppointmentService {
       throw new AppError('Já existe um agendamento para este horário');
     }
 
-    const appointment = appointmentsRepository.create({
+    const appointment = await this.appointmentsRepository.create({
       provider_id,
       date: appointmentDate,
     });
-
-    await appointmentsRepository.save(appointment);
 
     return appointment;
   }

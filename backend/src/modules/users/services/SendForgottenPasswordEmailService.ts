@@ -20,7 +20,7 @@ class SendForgottenPasswordEmailService {
     @inject('MailProvider')
     private mailProvider: IMailProvider,
 
-    @inject('IUserTokensRepository')
+    @inject('UserTokensRepository')
     private userTokensRepository: IUserTokensRepository,
   ) {}
 
@@ -33,10 +33,20 @@ class SendForgottenPasswordEmailService {
 
     const { token } = await this.userTokensRepository.generate(user.id);
 
-    this.mailProvider.sendMail(
-      email,
-      `Você receberá um e-mail com informações para cadastrar nova senha. ${token}`,
-    );
+    await this.mailProvider.sendMail({
+      to: {
+        name: user.name,
+        email: user.email,
+      },
+      subject: '[goBarber] Recuperação de Senha',
+      templateData: {
+        template: 'Olá, {{name}}: {{ token }}',
+        variables: {
+          name: user.name,
+          token,
+        },
+      },
+    });
   }
 }
 
